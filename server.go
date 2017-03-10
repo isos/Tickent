@@ -27,7 +27,7 @@ func TpuConnect(w http.ResponseWriter, r *http.Request) {
 	for key, _ := range r.Form {
 		err := json.Unmarshal([]byte(key), &tpuJson)
 		if err != nil {
-			fmt.Fprint(w, "Error: ", err)
+			fmt.Println("Error: ", err)
 			http.Error(w, "Forbidden", 400)
 			return
 		}
