@@ -105,7 +105,11 @@ func ClientConn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	iduser := r.PostFormValue("iduser")
+	iduser := r.PostFormValue("userid")
+	if userid == "" {
+		http.Error(w, "Forbidden", 400)
+		return
+	}
 
 	db, err := sql.Open("mysql", "ticket:X2L1aLOJ@/tickent")
 	if err != nil {
