@@ -25,6 +25,7 @@ func TpuConnect(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+  fmt.Println ("Hola")
 	http.HandleFunc("/", Index)
 	http.HandleFunc("/tpuconnect", TpuConnect)
 	http.ListenAndServe(":8080", nil)
