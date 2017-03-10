@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	_ "github.com/go-sql-driver/mysql/"
+	_ "github.com/go-sql-driver/mysql"
 	"net/http"
 )
 
@@ -51,45 +51,43 @@ func TpuConnect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = db.Ping
+	err = db.Ping()
 	if err != nil {
 		fmt.Println("Error: Failed to ping SQL db")
 	}
 
 	//prepared statement from struct values
 	//calculate total first?
+	stmt, err := db.Prepare("INSERT INTO compras(idnfc, idt) VALUES (?, ?)")
+	if err != nil {
+		fmt.Println(err)
+	}
+	_, err := stmt.Exec(tpuJson.idNfc, tpuJson.idTienda)
+	if err != nil {
+		fmt.Println(err)
+	}
 
-	stmt, err := db.Prepare("INSERT INTO compras(idnfc, idt, idc) VALUES (?, ?, ?, ?)")
-	if err != nil {
-		fmt.Println(err)
-	}
-	res, err := stmt.Exec(tpuJson.idnfc, tpuJson.idt, tpuJson.idc, total)
-	if err != nil {
-		fmt.Println(err)
-	}
-	//get last idc
-	lastId, err := res.LastInsertId()
-	if err != nil {
-		fmt.Println(err)
-	}
+	//get last idc -> lastId
+
+	var lastId int
+
 	for i := 0; i < len(tpuJson.items); i++ { //insert all items in json
-		stmt, err := db.Prepare("INSERT INTO compra(idc, idl, articulo, precio, cantidad) VALUES (?, ?, ?, ?, ?, ?)")
+		stmt, err := db.Prepare("INSERT INTO compra(idc, articulo, precio, cantidad) VALUES (?, ?, ?, ?)")
 		if err != nil {
 			fmt.Println(err)
 		}
-		res, err := stmt.Exec(tpuJson.items[i].articulo, tpuJson.items[i].precio, tpuJson.items[i].cantidad)
+		_, err := stmt.Exec(lastId, tpuJson.items[i].articulo, tpuJson.items[i].precio, tpuJson.items[i].cantidad)
 		if err != nil {
 			fmt.Println(err)
 		}
 	}
-
 }
 
 func ClientConn(w http.ResponseWriter, r *http.Request) {
 	userid := r.FormValue("userid")
 
 	//get from db put in "resp" struct
-
+	var resp TicketJson
 	json.NewEncoder(w).Encode(resp)
 
 }
