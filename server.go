@@ -17,15 +17,17 @@ func Index(w http.ResponseWriter, r *http.Request) {
 
 func TpuConnect(w http.ResponseWriter, r *http.Request) {
 	var tpuJson TicketJson
-	resp := r.FormValue("tpu_quKW3zx")
-	err := json.Unmarshal(resp, &tpuJson)
-	if err != nil {
-		fmt.Fprint(w, "Error: ", err)
+	//rep := r.FormValue("tpu_quKW3zx")
+	for key, _ := range r.Form {
+		err := json.Unmarshal([]byte(key), &tpuJson)
+		if err != nil {
+			fmt.Fprint(w, "Error: ", err)
+		}
 	}
 }
 
 func main() {
-	fmt.Println("Hola")
+	fmt.Println("Server Started")
 	http.HandleFunc("/", Index)
 	http.HandleFunc("/tpuconnect", TpuConnect)
 	http.ListenAndServe(":8080", nil)
