@@ -18,6 +18,13 @@ type TicketJson struct {
 	idTienda string
 	items    []CompraItem
 }
+type ClientJson struct {
+	tienda string
+	logo   string
+	color  int
+	total  float32
+	items  CompraItem
+}
 
 func Index(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hola")
