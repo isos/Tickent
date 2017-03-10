@@ -48,13 +48,10 @@ func TpuConnect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for key, _ := range r.Form {
-		err := json.Unmarshal([]byte(key), &tpuJson)
-		if err != nil {
-			fmt.Println("Error: ", err)
-			http.Error(w, "Forbidden", 400)
-			return
-		}
+	err := json.Unmarshal([]byte(r.FormValue("json")), &tpuJson)
+	if err != nil {
+		fmt.Println(err)
+		return
 	}
 
 	//put into db
