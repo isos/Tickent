@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+  "time"
+  "database/sql"
 	_ "github.com/go-sql-driver/mysql"
 	"net/http"
 )
@@ -13,17 +15,19 @@ type CompraItem struct {
 	precio   float32
 	cantidad int
 }
+
 type TicketJson struct {
 	idNfc    string
 	idTienda string
 	items    []CompraItem
 }
+
 type ClientJson struct {
 	tienda string
 	logo   string
 	color  int
 	total  float32
-	items  CompraItem
+	items  []CompraItem
 }
 
 func Index(w http.ResponseWriter, r *http.Request) {
@@ -91,18 +95,47 @@ func TpuConnect(w http.ResponseWriter, r *http.Request) {
 }
 
 func ClientConn(w http.ResponseWriter, r *http.Request) {
-	userid := r.FormValue("userid")
+  var buf bytes.Buffer
 
-	//get from db put in "resp" struct
+  logf := log.New (&buf, "logger: ", log.Lshortfile )
+
+  r.ParseForm ()
+
+  if r.Method == "GET" {
+    fmt.Fprintf (w, "500 Forbidden" )
+    return
+  }
+
+	db, err := sql.Open("mysql", "ticket:X2L1aLOJ@/tickent")
+	if err != nil {
+		fmt.Println ("Error: Failed to open SQL connection")
+		db.Close  ()
+		return
+	}
+
 	var resp TicketJson
+  /*
+	tienda string
+	logo   string
+	color  int
+	total  float32
+	items  []CompraItem
+  */
+  for p := 0; p
 	json.NewEncoder(w).Encode(resp)
-
 }
 
 func main() {
+  var buf bytes.Buffer;
+  t := time.Now ();
+
+  logger := log.New ( &buf, "HTTP Tickent: ", log.Lshortfile )
+  logger.Print ( "" )
 	fmt.Println("Server Started")
+
 	http.HandleFunc("/", Index)
 	http.HandleFunc("/tpuconnect", TpuConnect)
 	http.HandleFunc("/client", ClientConn)
+
 	http.ListenAndServe(":8080", nil)
 }
