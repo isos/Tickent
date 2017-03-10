@@ -4,10 +4,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-  "time"
-  "database/sql"
 	_ "github.com/go-sql-driver/mysql"
 	"net/http"
+	"time"
 )
 
 type CompraItem struct {
@@ -23,19 +22,18 @@ type TicketJson struct {
 }
 
 type NFCInfo struct {
-  IdNFC string
-  Model string
+	IdNFC string
+	Model string
 }
 
 type ClientJson struct {
-	Tienda  string
-	Logo    string
-  Model   string
-	Color   int
-	Total   float32
-	Items   []CompraItem
+	Tienda string
+	Logo   string
+	Model  string
+	Color  int
+	Total  float32
+	Items  []CompraItem
 }
-
 
 func Index(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hola")
@@ -102,68 +100,71 @@ func TpuConnect(w http.ResponseWriter, r *http.Request) {
 }
 
 func ClientConn(w http.ResponseWriter, r *http.Request) {
-  r.ParseForm ()
+	r.ParseForm()
 
-  if r.Method == "GET" {
-    http.Error ( w, "Error: Use POST Method. GET Method is not secure", 406 )
-    return
-  }
-
-  iduser := r.PostFormValue ( "iduser" );
-
-	db, err := sql.Open("mysql", "ticket:X2L1aLOJ@/tickent")
-	if err != nil {
-		fmt.Println ("Error: Failed to open SQL connection")
-		db.Close  ()
+	if r.Method == "GET" {
+		http.Error(w, "Error: Use POST Method. GET Method is not secure", 406)
 		return
 	}
 
-  rows, err = db.Query ("SELECT idnfc,model FROM nfc WHERE idu = ?", iduser)
-  if err != nil {
-    http.Error ( w, "Error: Failed executing query", 503 )
-    rows.Close ()
-    db.Close ()
-    return
-  }
+	iduser := r.PostFormValue("iduser")
 
-  var nfcusers []NFCInfo
+	db, err := sql.Open("mysql", "ticket:X2L1aLOJ@/tickent")
+	if err != nil {
+		fmt.Println("Error: Failed to open SQL connection")
+		db.Close()
+		return
+	}
 
-  for p := 0; rows.Next (); p++ {
-    if rows.Scan ( &nfcusers[p].IdNFC, &nfcusers[p].Model ) != nil {
-      http.Error ( w, "Error: Failed getting data", 500 )
-      rows.Close ()
-      db.Close ()
-      return
-    }
-  }
-  /*
-type TicketJson struct {
-	IdNfc    string
-	IdTienda string
-	Items    []CompraItem
-}
+	rows, err = db.Query("SELECT idnfc,model FROM nfc WHERE idu = ?", iduser)
+	if err != nil {
+		http.Error(w, "Error: Failed executing query", 503)
+		rows.Close()
+		db.Close()
+		return
+	}
 
-type NFCInfo struct {
-  IdNFC string
-  Model string
-}
+	var nfcusers []NFCInfo
 
-type ClientJson struct {
-	Tienda  string
-	Logo    string
-  Model   string
-	Color   int
-	Total   float32
-	Items   []CompraItem
-}
-  */
-  var resp ClientJson
+	for p := 0; rows.Next(); p++ {
+		if rows.Scan(&nfcusers[p].IdNFC, &nfcusers[p].Model) != nil {
+			http.Error(w, "Error: Failed getting data", 500)
+			rows.Close()
+			db.Close()
+			return
+		}
+	}
+	/*
+		type TicketJson struct {
+			IdNfc    string
+			IdTienda string
+			Items    []CompraItem
+		}
 
-	json.NewEncoder(w).Encode(resp)
+		type NFCInfo struct {
+		  IdNFC string
+		  Model string
+		}
+
+		type ClientJson struct {
+			Tienda  string
+			Logo    string
+		  Model   string
+			Color   int
+			Total   float32
+			Items   []CompraItem
+		}
+	*/
+
+	//return json to client
+	var client ClientJson
+	resp, _ := json.Marshal(client)
+	fmt.Fprintf(w, string(resp))
+
 }
 
 func main() {
-  fmt.Println ("Server Started")
+	fmt.Println("Server Started")
 
 	http.HandleFunc("/", Index)
 	http.HandleFunc("/tpuconnect", TpuConnect)
