@@ -1,8 +1,10 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
+	_ "github.com/go-sql-driver/mysql/"
 	"net/http"
 )
 
@@ -16,6 +18,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 }
 
 func TpuConnect(w http.ResponseWriter, r *http.Request) {
+	//get Json from TPU
 	var tpuJson TicketJson
 
 	if r.Body == nil {
@@ -33,6 +36,22 @@ func TpuConnect(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//put into db
+
+	//open SQL connection
+	db, err := sql.Open("mysql", "ticket:X2L1aLOJ@/tickent")
+	if err != nil {
+		fmt.Println("Error: Failed to open SQL connection")
+		db.Close()
+		return
+	}
+
+	err = db.Ping
+	if err != nil {
+		fmt.Println("Error: Failed to ping SQL db")
+	}
+
+	//prepared statement from struct values
+
 }
 
 func ClientConn(w http.ResponseWriter, r *http.Request) {
