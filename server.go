@@ -94,6 +94,7 @@ func TpuConnect(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(err)
 		}
 	}
+	http.Error(w, "OK", 200)
 }
 
 func ClientConn(w http.ResponseWriter, r *http.Request) {
@@ -154,7 +155,7 @@ func ClientConn(w http.ResponseWriter, r *http.Request) {
 	*/
 
 	//return json to client
-	var client ClientJson
+	var client []ClientJson
 	resp, _ := json.Marshal(client)
 	fmt.Fprintf(w, string(resp))
 
