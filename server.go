@@ -11,23 +11,23 @@ import (
 )
 
 type CompraItem struct {
-	articulo string
-	precio   float32
-	cantidad int
+	Articulo string
+	Precio   float32
+	Cantidad int
 }
 
 type TicketJson struct {
-	idNfc    string
-	idTienda string
-	items    []CompraItem
+	IdNfc    string
+	IdTienda string
+	Items    []CompraItem
 }
 
 type ClientJson struct {
-	tienda string
-	logo   string
-	color  int
-	total  float32
-	items  []CompraItem
+	Tienda string
+	Logo   string
+	Color  int
+	Total  float32
+	Items  []CompraItem
 }
 
 func Index(w http.ResponseWriter, r *http.Request) {
@@ -102,7 +102,7 @@ func ClientConn(w http.ResponseWriter, r *http.Request) {
   r.ParseForm ()
 
   if r.Method == "GET" {
-    fmt.Fprintf (w, "500 Forbidden" )
+    http.Error ( w, "Error: Use POST Method. GET Method is not secure", 406 )
     return
   }
 
@@ -113,6 +113,7 @@ func ClientConn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+
 	var resp TicketJson
   /*
 	tienda string
@@ -121,17 +122,15 @@ func ClientConn(w http.ResponseWriter, r *http.Request) {
 	total  float32
 	items  []CompraItem
   */
-  for p := 0; p
+  for p := 0; rows.Next (); p++ {
+    ... 
+  }
+
 	json.NewEncoder(w).Encode(resp)
 }
 
 func main() {
-  var buf bytes.Buffer;
-  t := time.Now ();
-
-  logger := log.New ( &buf, "HTTP Tickent: ", log.Lshortfile )
-  logger.Print ( "" )
-	fmt.Println("Server Started")
+  fmt.Println ("Server Started")
 
 	http.HandleFunc("/", Index)
 	http.HandleFunc("/tpuconnect", TpuConnect)
