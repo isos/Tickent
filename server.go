@@ -8,9 +8,15 @@ import (
 	"net/http"
 )
 
+type CompraItem struct {
+	articulo string
+	precio   float32
+	cantidad int
+}
 type TicketJson struct {
-	IdU   string
-	items []string
+	idNfc    string
+	idTienda string
+	items    []CompraItem
 }
 
 func Index(w http.ResponseWriter, r *http.Request) {
@@ -51,6 +57,31 @@ func TpuConnect(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//prepared statement from struct values
+	//calculate total first?
+
+	stmt, err := db.Prepare("INSERT INTO compras(idnfc, idt, idc) VALUES (?, ?, ?, ?)")
+	if err != nil {
+		fmt.Println(err)
+	}
+	res, err := stmt.Exec(tpuJson.idnfc, tpuJson.idt, tpuJson.idc, total)
+	if err != nil {
+		fmt.Println(err)
+	}
+	//get last idc
+	lastId, err := res.LastInsertId()
+	if err != nil {
+		fmt.Println(err)
+	}
+	for i := 0; i < len(tpuJson.items); i++ { //insert all items in json
+		stmt, err := db.Prepare("INSERT INTO compra(idc, idl, articulo, precio, cantidad) VALUES (?, ?, ?, ?, ?, ?)")
+		if err != nil {
+			fmt.Println(err)
+		}
+		res, err := stmt.Exec(tpuJson.items[i].articulo, tpuJson.items[i].precio, tpuJson.items[i].cantidad)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
 
 }
 
