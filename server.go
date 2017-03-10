@@ -18,6 +18,9 @@ func TpuConnect(w http.ResponseWriter, r *http.Request) {
 	var tpuJson TicketJson
 	resp := r.FormValue("tpu_quKW3zx")
 	err = json.Unmarshal(resp, &tpuJson)
+	if err != nil {
+		fmt.Fprint(w, "Error: ", err)
+	}
 }
 
 func main() {
