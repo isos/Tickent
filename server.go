@@ -23,7 +23,6 @@ func TpuConnect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//rep := r.FormValue("tpu_quKW3zx")
 	for key, _ := range r.Form {
 		err := json.Unmarshal([]byte(key), &tpuJson)
 		if err != nil {
@@ -32,9 +31,16 @@ func TpuConnect(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+
+	//put into db
 }
 
 func ClientConn(w http.ResponseWriter, r *http.Request) {
+	userid := r.FormValue("userid")
+
+	//get from db put in "resp" struct
+
+	json.NewEncoder(w).Encode(resp)
 
 }
 
