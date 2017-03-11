@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"encoding/json"
+  "time"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/skip2/go-qrcode"
@@ -31,8 +32,8 @@ type ClientJson struct {
 	Tienda string
 	Logo   string
 	Model  string
-	Fecha  string
-	Color  int
+	Fecha  time.Time
+	Color  string
 	Total  float32
 	Items  []CompraItem
 }
@@ -44,12 +45,16 @@ func Index(w http.ResponseWriter, r *http.Request) {
 func ClientConn(w http.ResponseWriter, r *http.Request) {
 	var iduser string
 
+  fmt.Println ("Request of: " + r.RemoteAddr )
+  fmt.Println (r.Method + " " + r.URL.Host + " " + r.URL.Path + " " + r.Proto)
+  fmt.Println ( r.Header )
+
 	r.ParseForm()
 
-	if r.Method == "GET" {
+/*	if r.Method == "GET" {
 		http.Error(w, "Error: Use POST Method. GET Method is not secure", 406)
 		return
-	}
+	}*/
 
 	iduser = r.FormValue("userid")
 	if len(iduser) == 0 {
@@ -70,16 +75,22 @@ func ClientConn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	query := "SELECT idnfc, model FROM nfc WHERE idu = ?"
+  var maxNFC int64
+  err = db.QueryRow("SELECT COUNT(*) FROM nfc WHERE idu = ?", iduser).Scan ( &maxNFC )
+  if err != nil {
+    return
+  }
 
-	var nfcusers []NFCInfo
+  query := "SELECT idnfc, model FROM nfc WHERE idu = ?"
 
-	rows, err := db.Query(query)
-	if err != nil {
-		http.Error(w, "Error: Failed executing query", 503)
-		db.Close()
-		return
-	}
+  var nfcusers = make ([]NFCInfo, maxNFC)
+
+  rows, err := db.Query ( query, iduser )
+  if err != nil {
+    http.Error ( w, "Error: Failed executing query", 503 )
+    db.Close ()
+    return
+  }
 
 	var p int = 0
 	for rows.Next() {
@@ -96,56 +107,67 @@ func ClientConn(w http.ResponseWriter, r *http.Request) {
 
 	rows.Close()
 
-	var client []ClientJson
+  var client []ClientJson
 
-	var i int = 0
-	for i < len(nfcusers) {
-		query = "SELECT cs.idc, t.empresa, t.color, t.logo, cs.total, cs.fecha FROM tienda t, compras cs WHERE cs.idnfc = ?"
-		rows, err := db.Query(query, nfcusers[i].IdNFC)
-		if err != nil {
-			fmt.Fprintf(w, "Error: Executing SQL Query", 500)
-			db.Close()
-			return
-		}
+  var i int = 0
+  for i < len(nfcusers) {
+    var maxClient int64
+    err = db.QueryRow ( "SELECT COUNT(*) FROM tienda, compras WHERE compras.idnfc = ?", nfcusers[i].IdNFC ).Scan ( &maxClient )
+    if err != nil {
+      return
+    }
 
-		var idc int = 0
-		p = 0
-		for rows.Next() {
-			rows.Scan(&idc, &client[p].Tienda, &client[p].Color, &client[p].Logo, &client[p].Total, &client[p].Fecha)
+    client = make ([]ClientJson, maxClient)
 
-			cmQuery := "SELECT articulo, cantidad, precio FROM compra WHERE idc = ?"
+    query = "SELECT cs.idc, t.empresa, t.color, t.logo, cs.total, cs.fecha FROM tienda t, compras cs WHERE cs.idnfc = ?"
+    rows, err := db.Query ( query, nfcusers[i].IdNFC )
+    if err != nil {
+      fmt.Fprintf (w, "Error: Executing SQL Query", 500 )
+      db.Close ()
+      return
+    }
 
-			cRows, err := db.Query(cmQuery, idc)
-			if err != nil {
-				fmt.Fprintf(w, "Error: Executing query", 500)
-				rows.Close()
-				db.Close()
-				return
-			}
+    var idc int = 0
+    p = 0
 
-			var scItem CompraItem
-			for c := 0; cRows.Next(); c++ {
-				cRows.Scan(&scItem.Articulo, &scItem.Cantidad, &scItem.Precio)
-				client[p].Items = append(client[p].Items, scItem)
-			}
+    for rows.Next () {
+      rows.Scan ( &idc, &client[p].Tienda, &client[p].Color, &client[p].Logo, &client[p].Total, &client[p].Fecha )
+      cmQuery := "SELECT articulo, cantidad, precio FROM compra WHERE idc = ?"
 
-			p++
-			cRows.Close()
-		}
+      cRows, err := db.Query ( cmQuery, idc )
+      if err != nil {
+        fmt.Fprintf (w, "Error: Executing query", 500)
+        rows.Close ()
+        db.Close ()
+        return
+      }
 
-		i++
-		rows.Close()
-	}
+      var scItem CompraItem
+      for c := 0; cRows.Next (); c++ {
+        cRows.Scan ( &scItem.Articulo, &scItem.Cantidad, &scItem.Precio )
+        client[p].Items = append ( client[p].Items, scItem )
+      }
 
-	db.Close()
+      p++
+      cRows.Close ()
+    }
 
-	resp, _ := json.Marshal(client)
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE, PUT")
-	w.Header().Set("Access-Control-Max-Age", "1000")
-	w.Header().Set("Access-Control-Allow-Headers", `"x-requested-with, Content-Type, origin, authorization, accept, client-security-token"`)
-	w.Header().Set("Content-Type", "application/json")
-	fmt.Fprintf(w, string(resp))
+    i++
+    rows.Close ()
+  }
+
+  db.Close ()
+
+  resp, _ := json.Marshal ( client )
+
+  w.Header().Set("Access-Control-Allow-Origin", "*")
+  w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE, PUT")
+  w.Header().Set("Access-Control-Max-Age", "1000")
+  w.Header().Set("Access-Control-Allow-Headers", `"x-requested-with, Content-Type, origin, authorization, accept, client-security-token"`)
+  w.Header().Set("Content-Type", "application/json")
+
+  fmt.Fprintf ( w, "{\"results\":%s}", string (resp) )
+//	json.NewEncoder(w).Encode(client)
 }
 
 func TpuConnect(w http.ResponseWriter, r *http.Request) {
@@ -239,5 +261,5 @@ func main() {
 	http.HandleFunc("/qrif", QrIf)
 	http.HandleFunc("/qr", QrImg)
 
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(":80", nil)
 }
