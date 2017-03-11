@@ -1,0 +1,108 @@
+<ion-header>
+  <!--<ion-navbar>
+    <ion-title>
+      TICKENT
+    </ion-title>
+  </ion-navbar>-->
+</ion-header>
+
+<ion-content >
+    <ion-card class="noti">
+        <div class="overlay"> </div>
+        <ion-row>
+            <ion-col> 
+                <ion-icon name="ios-beer-outline" class="notiIcon"></ion-icon>
+            </ion-col>
+            <ion-col>
+                <p>¿No se te olvida nada?</p>
+                <h1>0,25€/Quinto</h1>
+            </ion-col>
+        </ion-row>
+       
+    </ion-card>
+        <ion-card *ngFor="let item of items"  [ngStyle]="{'border-color': item.Color}" >
+            <ion-row>
+                <ion-col >
+                    <ion-item>
+                    <ion-avatar item-left>
+                        <img src={{item.Logo}}>
+                    </ion-avatar>
+                    <h2>{{item.Tienda}}</h2>
+                    <p>{{item.Fecha}}</p>
+                    </ion-item>
+                </ion-col>
+                <ion-col class="price">
+                    <button ion-button icon-left clear big >
+                        <ion-icon name="ios-basket-outline"></ion-icon>
+                        <div>{{item.Total}}€</div>
+                    </button>
+                </ion-col>
+            </ion-row>
+
+        <ion-list class="lista"> 
+            <ion-item *ngFor="let producto of item.Items" class="prod" >
+                <ion-row>
+                    <ion-col>
+                        <ion-badge item-right>{{producto.Cantidad}} </ion-badge>{{producto.Articulo}}
+                    </ion-col>
+                    <ion-col class="price" >
+                        {{producto.Precio}} €
+                    </ion-col>
+                </ion-row>
+            </ion-item>
+        </ion-list> 
+    </ion-card>
+    <ion-card color="primary">
+        <ion-card-content>  
+            <ion-row>
+                <ion-col>Gastados el mes de Febrero</ion-col>
+                <ion-col class="price"><button ion-button outline color="light">287.5€</button></ion-col>
+            </ion-row>
+            
+        </ion-card-content>
+    </ion-card>
+    <ion-card>
+        <ion-card-header>
+            Compras recomendadas
+        </ion-card-header>
+        <ion-card-content>
+            <ion-list class="lista"> 
+                <ion-item >
+                    <ion-row>
+                        <ion-col>Leche</ion-col>
+                        <ion-col class="price" >0.6 €</ion-col>
+                    </ion-row>
+                </ion-item>
+                <ion-item >
+                    <ion-row>
+                        <ion-col>Papel higiénico</ion-col>
+                        <ion-col class="price" >2.3 €</ion-col>
+                    </ion-row>
+                </ion-item>
+                <ion-item >
+                    <ion-row>
+                        <ion-col>Pilas</ion-col>
+                        <ion-col class="price" >3.1 €</ion-col>
+                    </ion-row>
+                </ion-item>
+            </ion-list> 
+            <!--<ion-item>
+                <ion-row>
+                    <ion-col >
+                        <ion-avatar item-left>
+                            <img src="https://quienmanda.s3.amazonaws.com/uploads/avatar/9277/logo.png">
+                        </ion-avatar>
+                    </ion-col>
+                    <ion-col class="price" style="vertical-align: middle">
+                        Ahorra
+                        <button ion-button outline>0.52€</button>
+                    </ion-col>
+                </ion-row>
+                
+                
+            </ion-item>-->
+        </ion-card-content>
+        
+        
+    </ion-card>
+</ion-content>

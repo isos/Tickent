@@ -1,0 +1,47 @@
+
+page-home {
+
+}
+
+.price, .right
+{
+   text-align: right;
+}
+
+.card
+{
+    border-top: 4px solid white;
+    border-radius: 5px;
+    border-top-left-radius: 7px;
+    border-top-right-radius: 7px;
+    vertical-align: middle;
+}
+.noti
+{
+    padding: 20px;
+    background-color: #222222; 
+    color: white;
+    background-size:  cover;
+    background-position: 00px 300px;
+
+}
+.noti p
+{
+    color: white;
+}
+.noti h1{
+    color: white;
+    font-weight: bolder;
+}
+
+
+.notiIcon
+{
+    font-size: 4em;
+}
+
+.prod .label-md
+{
+    margin: 0px 8px 0px 0px;
+    border-top: 1px solid #777777;
+}
