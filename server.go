@@ -2,9 +2,11 @@ package main
 
 import (
 	"database/sql"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/skip2/go-qrcode"
 	"net/http"
 )
 
@@ -137,7 +139,13 @@ func ClientConn(w http.ResponseWriter, r *http.Request) {
 
 	db.Close()
 
-	json.NewEncoder(w).Encode(client)
+	resp, _ := json.Marshal(client)
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE, PUT")
+	w.Header().Set("Access-Control-Max-Age", "1000")
+	w.Header().Set("Access-Control-Allow-Headers", `"x-requested-with, Content-Type, origin, authorization, accept, client-security-token"`)
+	w.Header().Set("Content-Type", "application/json")
+	fmt.Fprintf(w, string(resp))
 }
 
 func TpuConnect(w http.ResponseWriter, r *http.Request) {
@@ -156,7 +164,7 @@ func TpuConnect(w http.ResponseWriter, r *http.Request) {
 
 	var qr bool = false
 
-	if tpJson.IdNfc == "borja" {
+	if tpuJson.IdNfc == "borja" {
 		qr = true
 	}
 
@@ -203,7 +211,7 @@ func TpuConnect(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if qr {
-		fmt.Fprintf(w, lastId)
+		fmt.Fprintf(w, string(lastId))
 	} else {
 		fmt.Fprintf(w, "OK")
 	}
@@ -231,5 +239,5 @@ func main() {
 	http.HandleFunc("/qrif", QrIf)
 	http.HandleFunc("/qr", QrImg)
 
-	http.ListenAndServe(":80", nil)
+	http.ListenAndServe(":8080", nil)
 }
