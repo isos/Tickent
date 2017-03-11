@@ -35,6 +35,8 @@ type ClientJson struct {
 	Items  []CompraItem
 }
 
+<<<<<<< HEAD
+=======
 func Index(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hola")
 }
@@ -97,6 +99,7 @@ func TpuConnect(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "OK", 200)
 }
 
+>>>>>>> d3fee41a11ada9aa509cfeffbf6d9fbfc27ebfce
 func ClientConn(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
@@ -118,6 +121,34 @@ func ClientConn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+<<<<<<< HEAD
+  query := "SELECT idnfc, model FROM nfc WHERE idu = ?"
+
+  rows, err = db.Query ( query )
+  if err != nil {
+    http.Error ( w, "Error: Failed executing query", 503 )
+    rows.Close ()
+    db.Close ()
+    return
+  }
+
+  var nfcusers []NFCInfo
+
+  for p := 0; rows.Next (); p++ {
+    if rows.Scan ( &nfcusers[p].IdNFC, &nfcusers[p].Model ) != nil {
+      http.Error ( w, "Error: Failed getting data", 500 )
+      rows.Close ()
+      db.Close ()
+      return
+    }
+  }
+  /*
+type TicketJson struct {
+	IdNfc    string
+	IdTienda string
+	Items    []CompraItem
+}
+=======
 	rows, err = db.Query("SELECT idnfc,model FROM nfc WHERE idu = ?", iduser)
 	if err != nil {
 		http.Error(w, "Error: Failed executing query", 503)
@@ -125,6 +156,7 @@ func ClientConn(w http.ResponseWriter, r *http.Request) {
 		db.Close()
 		return
 	}
+>>>>>>> d3fee41a11ada9aa509cfeffbf6d9fbfc27ebfce
 
 	var nfcusers []NFCInfo
 
@@ -163,13 +195,27 @@ func ClientConn(w http.ResponseWriter, r *http.Request) {
 	resp, _ := json.Marshal(client)
 	fmt.Fprintf(w, string(resp))
 
+<<<<<<< HEAD
+  query = "SELECT t.empresa, t.color, t.logo, cs.total, cs.fecha FROM tienda t, compras cs WHERE cs.idnfc = ?"
+
+  for p := 0; p < rows.Next (); p++ {
+    rows, err = db.Query ( query, nfcusers[p] );
+
+    db.Prepare ("SELECT COUNT(idl) FROM compra WHERE idc = ?")
+    db.Exec ( idc )
+
+    for i := 0; 
+
+  resp.Items = make ( []CompraItem, 
+
+	json.NewEncoder(w).Encode(resp)
+=======
+>>>>>>> d3fee41a11ada9aa509cfeffbf6d9fbfc27ebfce
 }
 
 func main() {
 	fmt.Println("Server Started")
 
-	http.HandleFunc("/", Index)
-	http.HandleFunc("/tpuconnect", TpuConnect)
 	http.HandleFunc("/client", ClientConn)
 
 	http.ListenAndServe(":8080", nil)
