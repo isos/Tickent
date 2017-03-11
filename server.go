@@ -68,11 +68,17 @@ func ClientConn (w http.ResponseWriter, r *http.Request) {
     return
   }
 
+  var maxNFC int64
+  err = db.QueryRow("SELECT COUNT(*) FROM nfc WHERE idu = ?", iduser).Scan ( &maxNFC )
+  if err != nil {
+    return
+  }
+
   query := "SELECT idnfc, model FROM nfc WHERE idu = ?"
 
-  var nfcusers []NFCInfo
+  var nfcusers = make ([]NFCInfo, maxNFC)
 
-  rows, err := db.Query ( query )
+  rows, err := db.Query ( query, iduser )
   if err != nil {
     http.Error ( w, "Error: Failed executing query", 503 )
     db.Close ()
@@ -94,7 +100,7 @@ func ClientConn (w http.ResponseWriter, r *http.Request) {
 
   rows.Close ()
 
-	var client []ClientJson
+  var client []ClientJson
 
   var i int = 0
   for i < len(nfcusers) {
@@ -105,6 +111,14 @@ func ClientConn (w http.ResponseWriter, r *http.Request) {
       db.Close ()
       return
     }
+
+    var maxClient int64
+    err = db.QueryRow ( "SELECT COUNT(*) FROM tienda, compras WHERE compras.idnfc = ?", nfcusers[i].IdNFC ).Scan ( &maxClient )
+    if err != nil {
+      return
+    }
+
+    client = make ([]ClientJson, maxClient)
 
     var idc int = 0
     p = 0
