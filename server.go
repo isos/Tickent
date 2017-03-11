@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
   "net/http"
-  "time"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -41,7 +40,6 @@ func Index(w http.ResponseWriter, r *http.Request) {
 }
 
 func ClientConn (w http.ResponseWriter, r *http.Request) {
-  fmt.Println (r.UserAgent () )
   var iduser  string
 
 	r.ParseForm()
@@ -177,7 +175,7 @@ func TpuConnect(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	_, err := stmt.Exec(tpuJson.idNfc, tpuJson.idTienda)
+	_, err = stmt.Exec (tpuJson.IdNfc, tpuJson.IdTienda)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -191,9 +189,11 @@ func TpuConnect(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			fmt.Println(err)
 		}
-		_, err := stmt.Exec(lastId, tpuJson.Items[i].articulo, tpuJson.Items[i].precio, tpuJson.Items[i].cantidad)
+		_, err = stmt.Exec ( &lastId, &tpuJson.Items[i].Articulo, &tpuJson.Items[i].Precio, &tpuJson.Items[i].Cantidad )
 		if err != nil {
-			fmt.Println(err)
+			fmt.Println (err)
+      fmt.Fprintf (w, "Error: Internal error", 500)
+      return
 		}
 	}
 	http.Error(w, "OK", 200)
@@ -206,5 +206,5 @@ func main() {
 	http.HandleFunc("/client", ClientConn)
   http.HandleFunc("/tpuconnect", TpuConnect)
 
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(":80", nil)
 }
