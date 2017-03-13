@@ -115,7 +115,7 @@ func ClientConn(w http.ResponseWriter, r *http.Request) {
 	for i < len (nfcusers) {
     var cws ClientJson
 
-		query = "SELECT cs.idc, t.empresa, t.color, t.logo, cs.total, cs.fecha FROM tienda t, compras cs WHERE cs.idnfc = ?"
+		query = "SELECT cs.idc, t.empresa, t.color, t.logo, cs.total, cs.fecha FROM tienda t, compras cs WHERE cs.idnfc = ? and cs.idt=t.idt"
 		rows, err := db.Query (query, nfcusers[i].IDNFC)
 		if err != nil {
 			fmt.Fprintf (w, "Error: Executing SQL Query", 500)
@@ -207,28 +207,45 @@ func TpuConnect (w http.ResponseWriter, r *http.Request) {
 		log.Println("Error: Failed to ping SQL db")
 	}
 
-	//prepared statement from struct values
-	//calculate total first?
-	stmt, err := db.Prepare("INSERT INTO compras(idnfc, idt) VALUES (?, ?)")
-	if err != nil {
-		log.Println(err)
-	}
-	_, err = stmt.Exec(tpuJson.IDNFC, tpuJson.IDTienda)
-	if err != nil {
-		log.Println(err)
-	}
-
-	//get last idc -> lastId
+  // inert into nfc table
+  stmt, err := db.Prepare("INSERT INTO nfc (idu, idnfc) VALUES (?, ?)")
+  if err != nil {
+    fmt.Println("Error inserting data to nfc table")
+    return
+  }
+  _, err = stmt.Exec(1, &tpuJson.IDNFC)
+  if err != nil {
+    log.Println (err)
+  }
 
 	var lastId int
 
+  err = db.QueryRow("SELECT MAX(idc) FROM compras WHERE idnfc = ?", tpuJson.IDNFC).Scan(&lastId)
+  if err != nil {
+    lastId = 0
+	}
+  lastId++
+
+	stmt, err = db.Prepare("INSERT INTO compras(idnfc, idt, idc) VALUES (?, ?, ?)")
+	if err != nil {
+		log.Println(err)
+    return
+	}
+
+	_, err = stmt.Exec(&tpuJson.IDNFC, &tpuJson.IDTienda, &lastId)
+	if err != nil {
+		log.Println(err)
+    return
+	}
+
 	for i := 0; i < len(tpuJson.Items); i++ { //insert all Items in json
-		stmt, err := db.Prepare("INSERT INTO compra(idc, articulo, precio, cantidad) VALUES (?, ?, ?, ?)")
+		stmt, err := db.Prepare("INSERT INTO compra(idc, idl, articulo, precio, cantidad) VALUES (?, ?, ?, ?, ?)")
 		if err != nil {
 			log.Println(err)
+      return
 		}
 
-		_, err = stmt.Exec(&lastId, &tpuJson.Items[i].Articulo, &tpuJson.Items[i].Precio, &tpuJson.Items[i].Cantidad)
+		_, err = stmt.Exec(&lastId, &i, &tpuJson.Items[i].Articulo, &tpuJson.Items[i].Precio, &tpuJson.Items[i].Cantidad)
 		if err != nil {
 			log.Println(err)
 			fmt.Fprintf(w, "Error: Internal error", 500)
