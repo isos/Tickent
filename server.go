@@ -109,17 +109,11 @@ func ClientConn(w http.ResponseWriter, r *http.Request) {
 
 	rows.Close ()
 
-	var client []ClientJson
+	var client []ClientJson = make ([]ClientJson, 0)
 
 	var i int = 0
 	for i < len (nfcusers) {
-		var maxClient int64
-		err = db.QueryRow ("SELECT COUNT(*) FROM tienda, compras WHERE compras.idnfc = ?", nfcusers[i].IDNFC).Scan (&maxClient)
-		if err != nil {
-			return
-		}
-
-		client = make ([]ClientJson, maxClient)
+    var cws ClientJson
 
 		query = "SELECT cs.idc, t.empresa, t.color, t.logo, cs.total, cs.fecha FROM tienda t, compras cs WHERE cs.idnfc = ?"
 		rows, err := db.Query (query, nfcusers[i].IDNFC)
@@ -133,7 +127,7 @@ func ClientConn(w http.ResponseWriter, r *http.Request) {
 		p = 0
 
 		for rows.Next () {
-			rows.Scan (&idc, &client[p].Tienda, &client[p].Color, &client[p].Logo, &client[p].Total, &client[p].Fecha)
+			rows.Scan (&idc, &cws.Tienda, &cws.Color, &cws.Logo, &cws.Total, &cws.Fecha)
 			cmQuery := "SELECT articulo, cantidad, precio FROM compra WHERE idc = ?"
 
 			cRows, err := db.Query (cmQuery, idc)
@@ -147,8 +141,10 @@ func ClientConn(w http.ResponseWriter, r *http.Request) {
 			var scItem CompraItem
 			for c := 0; cRows.Next (); c++ {
 				cRows.Scan (&scItem.Articulo, &scItem.Cantidad, &scItem.Precio)
-				client[p].Items = append (client[p].Items, scItem)
+				cws.Items = append (cws.Items, scItem)
 			}
+
+      client = append ( client, cws )
 
 			p++
 			cRows.Close ()
@@ -174,6 +170,10 @@ func ClientConn(w http.ResponseWriter, r *http.Request) {
 
 func TpuConnect (w http.ResponseWriter, r *http.Request) {
 	var tpuJson TicketJson
+
+	log.Println("Request of: " + r.RemoteAddr)
+	log.Println(r.Method + " " + r.URL.Host + " " + r.URL.Path + " " + r.Proto)
+	log.Println(r.Header)
 
 	if r.Body == nil {
 		http.Error(w, "Forbidden", 400)

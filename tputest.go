@@ -15,8 +15,8 @@ type CompraItem struct {
 	Cantidad int
 }
 type TicketJson struct {
-	IdNfc    string
-	IdTienda string
+	IDNFC    string
+	IDTienda string
 	Items    []CompraItem
 }
 type ClientJson struct {
@@ -31,9 +31,9 @@ func main() {
 	var tpu TicketJson
 
 	tpu.Items = make([]CompraItem, 2)
-	//tpu.IdNfc = `#79c"AXE?bc%>@rS8{G??z6"QJMk&>/By8:u5(Sdpz<LQ%a5LV2w;x#K/4>tMwm8:MnUY=E,[.WVh"pjbSQrL&k@_EGe6y4&8tnNdh&[+U(YFTp?.bHnKGj.gEx#!7'r`
-	tpu.IdNfc = "pepe"
-	tpu.IdTienda = "1234"
+	//tpu.IDNFC = `#79c"AXE?bc%>@rS8{G??z6"QJMk&>/By8:u5(Sdpz<LQ%a5LV2w;x#K/4>tMwm8:MnUY=E,[.WVh"pjbSQrL&k@_EGe6y4&8tnNdh&[+U(YFTp?.bHnKGj.gEx#!7'r`
+	tpu.IDNFC = "pepe"
+	tpu.IDTienda = "1234"
 	tpu.Items[0].Articulo = "pan"
 	tpu.Items[0].Precio = 0.69
 	tpu.Items[0].Cantidad = 20
