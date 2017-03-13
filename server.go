@@ -4,11 +4,13 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"encoding/json"
-  "time"
 	"fmt"
+  "log"
+  "os"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/skip2/go-qrcode"
 	"net/http"
+	"time"
 )
 
 type CompraItem struct {
@@ -18,13 +20,13 @@ type CompraItem struct {
 }
 
 type TicketJson struct {
-	IdNfc    string
-	IdTienda string
+	IDNFC    string
+	IDTienda string
 	Items    []CompraItem
 }
 
 type NFCInfo struct {
-	IdNFC string
+	IDNFC string
 	Model string
 }
 
@@ -45,9 +47,9 @@ func Index(w http.ResponseWriter, r *http.Request) {
 func ClientConn(w http.ResponseWriter, r *http.Request) {
 	var iduser string
 
-  fmt.Println ("Request of: " + r.RemoteAddr )
-  fmt.Println (r.Method + " " + r.URL.Host + " " + r.URL.Path + " " + r.Proto)
-  fmt.Println ( r.Header )
+	log.Println("Request of: " + r.RemoteAddr)
+	log.Println(r.Method + " " + r.URL.Host + " " + r.URL.Path + " " + r.Proto)
+	log.Println(r.Header)
 
 	r.ParseForm()
 
@@ -64,113 +66,113 @@ func ClientConn(w http.ResponseWriter, r *http.Request) {
 
 	db, err := sql.Open("mysql", "ticket:X2L1aLOJ@/tickent")
 	if err != nil {
-		fmt.Println("Error: Failed to open SQL connection")
+		log.Println("Error: Failed to open SQL connection")
 		db.Close()
 		return
 	}
 
 	if db.Ping() != nil {
-		fmt.Println("Error: Connecting to database")
+		log.Println("Error: Connecting to database")
 		fmt.Fprintf(w, "Error: Connecting to MySQL Database", 500)
 		return
 	}
 
-  var maxNFC int64
-  err = db.QueryRow("SELECT COUNT(*) FROM nfc WHERE idu = ?", iduser).Scan ( &maxNFC )
-  if err != nil {
-    return
-  }
+	var maxNFC int64
+	err = db.QueryRow("SELECT COUNT(*) FROM nfc WHERE idu = ?", iduser).Scan(&maxNFC)
+	if err != nil {
+		return
+	}
 
-  query := "SELECT idnfc, model FROM nfc WHERE idu = ?"
+	query := "SELECT idnfc FROM nfc WHERE idu = ?"
 
-  var nfcusers = make ([]NFCInfo, maxNFC)
+	var nfcusers []NFCInfo = make([]NFCInfo, maxNFC)
 
-  rows, err := db.Query ( query, iduser )
-  if err != nil {
-    http.Error ( w, "Error: Failed executing query", 503 )
-    db.Close ()
-    return
-  }
+	rows, err := db.Query (query, iduser)
+	if err != nil {
+		http.Error (w, "Error: Failed executing query", 503)
+		db.Close ()
+		return
+	}
 
 	var p int = 0
-	for rows.Next() {
-		err := rows.Scan(&nfcusers[p].IdNFC, &nfcusers[p].Model)
+	for rows.Next () {
+		err := rows.Scan ( &nfcusers[p].IDNFC )
 		if err != nil {
-			http.Error(w, "Error: Failed getting data", 500)
-			rows.Close()
-			db.Close()
+			http.Error (w, "Error: Failed getting data", 500)
+			rows.Close ()
+			db.Close ()
 			return
 		}
 
 		p++
 	}
 
-	rows.Close()
+	rows.Close ()
 
-  var client []ClientJson
+	var client []ClientJson
 
-  var i int = 0
-  for i < len(nfcusers) {
-    var maxClient int64
-    err = db.QueryRow ( "SELECT COUNT(*) FROM tienda, compras WHERE compras.idnfc = ?", nfcusers[i].IdNFC ).Scan ( &maxClient )
-    if err != nil {
-      return
-    }
+	var i int = 0
+	for i < len (nfcusers) {
+		var maxClient int64
+		err = db.QueryRow ("SELECT COUNT(*) FROM tienda, compras WHERE compras.idnfc = ?", nfcusers[i].IDNFC).Scan (&maxClient)
+		if err != nil {
+			return
+		}
 
-    client = make ([]ClientJson, maxClient)
+		client = make ([]ClientJson, maxClient)
 
-    query = "SELECT cs.idc, t.empresa, t.color, t.logo, cs.total, cs.fecha FROM tienda t, compras cs WHERE cs.idnfc = ?"
-    rows, err := db.Query ( query, nfcusers[i].IdNFC )
-    if err != nil {
-      fmt.Fprintf (w, "Error: Executing SQL Query", 500 )
-      db.Close ()
-      return
-    }
+		query = "SELECT cs.idc, t.empresa, t.color, t.logo, cs.total, cs.fecha FROM tienda t, compras cs WHERE cs.idnfc = ?"
+		rows, err := db.Query (query, nfcusers[i].IDNFC)
+		if err != nil {
+			fmt.Fprintf (w, "Error: Executing SQL Query", 500)
+			db.Close ()
+			return
+		}
 
-    var idc int = 0
-    p = 0
+		var idc int = 0
+		p = 0
 
-    for rows.Next () {
-      rows.Scan ( &idc, &client[p].Tienda, &client[p].Color, &client[p].Logo, &client[p].Total, &client[p].Fecha )
-      cmQuery := "SELECT articulo, cantidad, precio FROM compra WHERE idc = ?"
+		for rows.Next () {
+			rows.Scan (&idc, &client[p].Tienda, &client[p].Color, &client[p].Logo, &client[p].Total, &client[p].Fecha)
+			cmQuery := "SELECT articulo, cantidad, precio FROM compra WHERE idc = ?"
 
-      cRows, err := db.Query ( cmQuery, idc )
-      if err != nil {
-        fmt.Fprintf (w, "Error: Executing query", 500)
-        rows.Close ()
-        db.Close ()
-        return
-      }
+			cRows, err := db.Query (cmQuery, idc)
+			if err != nil {
+				fmt.Fprintf (w, "Error: Executing query", 500)
+				rows.Close ()
+				db.Close ()
+				return
+			}
 
-      var scItem CompraItem
-      for c := 0; cRows.Next (); c++ {
-        cRows.Scan ( &scItem.Articulo, &scItem.Cantidad, &scItem.Precio )
-        client[p].Items = append ( client[p].Items, scItem )
-      }
+			var scItem CompraItem
+			for c := 0; cRows.Next (); c++ {
+				cRows.Scan (&scItem.Articulo, &scItem.Cantidad, &scItem.Precio)
+				client[p].Items = append (client[p].Items, scItem)
+			}
 
-      p++
-      cRows.Close ()
-    }
+			p++
+			cRows.Close ()
+		}
 
-    i++
-    rows.Close ()
-  }
+		i++
+		rows.Close ()
+	}
 
-  db.Close ()
+	db.Close()
 
-  resp, _ := json.Marshal ( client )
+	resp, _ := json.Marshal (client)
 
-  w.Header().Set("Access-Control-Allow-Origin", "*")
-  w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE, PUT")
-  w.Header().Set("Access-Control-Max-Age", "1000")
-  w.Header().Set("Access-Control-Allow-Headers", `"x-requested-with, Content-Type, origin, authorization, accept, client-security-token"`)
-  w.Header().Set("Content-Type", "application/json")
+	w.Header().Set ("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE, PUT")
+	w.Header().Set("Access-Control-Max-Age", "1000")
+	w.Header().Set("Access-Control-Allow-Headers", `"x-requested-with, Content-Type, origin, authorization, accept, client-security-token"`)
+	w.Header().Set("Content-Type", "application/json")
 
-  fmt.Fprintf ( w, "{\"results\":%s}", string (resp) )
-//	json.NewEncoder(w).Encode(client)
+	fmt.Fprintf (w, "{\"results\":%s}", string(resp))
+	//	json.NewEncoder(w).Encode(client)
 }
 
-func TpuConnect(w http.ResponseWriter, r *http.Request) {
+func TpuConnect (w http.ResponseWriter, r *http.Request) {
 	var tpuJson TicketJson
 
 	if r.Body == nil {
@@ -180,13 +182,13 @@ func TpuConnect(w http.ResponseWriter, r *http.Request) {
 
 	err := json.Unmarshal([]byte(r.FormValue("json")), &tpuJson)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
 
 	var qr bool = false
 
-	if tpuJson.IdNfc == "borja" {
+	if tpuJson.IDNFC == "borja" {
 		qr = true
 	}
 
@@ -195,25 +197,25 @@ func TpuConnect(w http.ResponseWriter, r *http.Request) {
 	//open SQL connection
 	db, err := sql.Open("mysql", "ticket:X2L1aLOJ@/tickent")
 	if err != nil {
-		fmt.Println("Error: Failed to open SQL connection")
+		log.Println("Error: Failed to open SQL connection")
 		db.Close()
 		return
 	}
 
 	err = db.Ping()
 	if err != nil {
-		fmt.Println("Error: Failed to ping SQL db")
+		log.Println("Error: Failed to ping SQL db")
 	}
 
 	//prepared statement from struct values
 	//calculate total first?
 	stmt, err := db.Prepare("INSERT INTO compras(idnfc, idt) VALUES (?, ?)")
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
-	_, err = stmt.Exec(tpuJson.IdNfc, tpuJson.IdTienda)
+	_, err = stmt.Exec(tpuJson.IDNFC, tpuJson.IDTienda)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 
 	//get last idc -> lastId
@@ -223,15 +225,17 @@ func TpuConnect(w http.ResponseWriter, r *http.Request) {
 	for i := 0; i < len(tpuJson.Items); i++ { //insert all Items in json
 		stmt, err := db.Prepare("INSERT INTO compra(idc, articulo, precio, cantidad) VALUES (?, ?, ?, ?)")
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 		}
+
 		_, err = stmt.Exec(&lastId, &tpuJson.Items[i].Articulo, &tpuJson.Items[i].Precio, &tpuJson.Items[i].Cantidad)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			fmt.Fprintf(w, "Error: Internal error", 500)
 			return
 		}
 	}
+
 	if qr {
 		fmt.Fprintf(w, string(lastId))
 	} else {
@@ -253,7 +257,14 @@ func QrImg(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	fmt.Println("Server Started")
+  logfile, err := os.OpenFile ("tickent.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644 )
+  if err != nil {
+    fmt.Fprintf ( os.Stdout, "Error opening file: %v", err )
+    return
+  }
+  log.SetOutput (logfile)
+
+  log.Println("Server Started")
 
 	http.HandleFunc("/", Index)
 	http.HandleFunc("/client", ClientConn)
